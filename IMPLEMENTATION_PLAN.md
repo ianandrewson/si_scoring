@@ -24,7 +24,8 @@ app/
 ├── (tabs)/
 │   ├── _layout.tsx                # Tab navigator
 │   ├── index.tsx                  # Home screen (games list)
-│   └── settings.tsx               # Profile management
+│   ├── profiles.tsx               # Profile management
+│   └── stats.tsx                  # Profile stats
 ├── add-game.tsx                   # Add game form (modal)
 └── game/
     └── [id].tsx                   # Game details with tabs
@@ -49,7 +50,7 @@ contexts/AppContext.tsx
 
 ### Schema (SQLite)
 - **profiles**: id, name, created_at, last_used_at
-- **games**: id, profile_id (FK), date, players, spirits, win, adversary, adversary_difficulty, scenario, terror_level, invader_cards, dahan, blight, notes, created_at, updated_at
+- **games**: id, profile_id (FK), score, date, players, spirits, win, adversary, scenario, invader_cards, dahan, blight, notes, created_at, updated_at
 - **game_pictures**: id, game_id (FK), file_path, created_at
 
 ### Key Files
@@ -61,11 +62,9 @@ contexts/AppContext.tsx
 ### Score Calculation (`lib/scoring.ts`) - Official Rules
 ```typescript
 // Victory Score:
-// = (10 × terrorLevelMultiplier) + adversaryDifficulty + invaderCardsRemaining + (2 × dahan) - blight
+// = (5 × (adversaryDifficulty + scenarioDifficulty)) + 10 + (2 x invaderCards) + (dahan / players) - (blight / players)
 //
-// Terror Level Multipliers: TL1=2, TL2=3, TL3=4, TL4/Complete=5
-//
-// Defeat Score: 0
+// Defeat Score: (2 × (adversaryDifficulty + scenarioDifficulty)) + invaderCards + (dahan / players) - (blight / players)
 ```
 
 ---
@@ -88,11 +87,12 @@ contexts/AppContext.tsx
 
 ### Entry Point (`app/index.tsx`)
 - Redirect to `/profile-setup` if no profiles exist
-- Redirect to `/(tabs)` if profile exists (loads most recent)
+- Redirect to `/(tabs)` if profile exists (loads most recent active profile)
 
 ### Tab Navigator (`app/(tabs)/_layout.tsx`)
+- **Profiles** tab - Profile management
 - **Games** tab (home) - List of games
-- **Settings** tab - Profile management
+- **Stats** tab - Profile stats
 
 ---
 
@@ -109,7 +109,7 @@ contexts/AppContext.tsx
 - Empty state when no games
 
 ### Add Game (`app/add-game.tsx`)
-- Form fields: date, players, spirits, win toggle, terror level (1-4 picker), adversary (text), adversary difficulty (number), scenario, invader cards, dahan, blight, notes
+- Form fields: date, players, spirits, win toggle, adversary (text), adversary difficulty (number), scenario, invader cards, dahan, blight, notes
 - Terror level picker only shown when win=true
 - ImagePicker component for photos
 - On submit: save to DB, navigate to `/game/[id]?tab=stats`
@@ -120,9 +120,9 @@ contexts/AppContext.tsx
 - **Stats tab**: Score display + "Additional stats will go here"
 - Default to "Game" tab from list, "Stats" tab after adding
 
-### Settings (`app/(tabs)/settings.tsx`)
-- Toggle "View all profiles"
+### Settings (`app/(tabs)/profiles.tsx`)
 - List of profiles with selection
+- "All Profiles" profile with id=0
 - Add new profile button
 
 ---
@@ -196,9 +196,7 @@ interface Game {
   players: string;
   spirits: string;
   win: boolean;
-  terrorLevel: number;        // 1-4 (only relevant for wins)
   adversary: string | null;
-  adversaryDifficulty: number; // 0 if no adversary
   scenario: string | null;
   invaderCards: number;
   dahan: number;
