@@ -53,11 +53,13 @@ contexts/AppContext.tsx
 - **games**: id, profile_id (FK), score, date, players, spirits, win, adversary, scenario, invader_cards, dahan, blight, notes, created_at, updated_at
 - **game_pictures**: id, game_id (FK), file_path, created_at
 
+add index on games.profile_id. Consider ON DELETE CASCADE for game_pictures.
+
 ### Key Files
 - `lib/database/schema.ts` - SQL table definitions
 - `lib/database/connection.ts` - Database initialization with `expo-sqlite`
 - `hooks/useProfiles.ts` - Profile CRUD operations
-- `hooks/useGames.ts` - Game CRUD with score calculation
+- `hooks/useGames.ts` - Game CRUD with score calculation; score calculation should be made when adding a game to database. Enums for adversary and scenario difficulty will be manually added.
 
 ### Score Calculation (`lib/scoring.ts`) - Official Rules
 ```typescript
