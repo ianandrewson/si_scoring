@@ -1,6 +1,7 @@
 import { Tabs } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useColorScheme } from "react-native";
+import { HapticTab } from "@/components/ui/HapticTab";
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
@@ -17,6 +18,7 @@ export default function TabLayout() {
         tabBarStyle: {
           backgroundColor: colorScheme === "dark" ? "#000" : "#fff",
         },
+        tabBarButton: HapticTab,
       }}
     >
       <Tabs.Screen
