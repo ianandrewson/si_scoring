@@ -8,6 +8,7 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  TouchableOpacity,
 } from 'react-native';
 import { router, Stack } from 'expo-router';
 import { ThemedText } from '@/components/ThemedText';
@@ -23,7 +24,7 @@ export default function AddGameScreen() {
   const { createGame } = useGames();
 
   const [date, setDate] = useState(new Date());
-  const [players, setPlayers] = useState('');
+  const [players, setPlayers] = useState<string[]>(['']);
   const [spirits, setSpirits] = useState('');
   const [win, setWin] = useState(false);
   const [adversary, setAdversary] = useState('');
@@ -37,19 +38,30 @@ export default function AddGameScreen() {
   const [images, setImages] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
 
+  const addPlayerInput = () => {
+    setPlayers([...players, '']);
+  };
+
+  const updatePlayer = (index: number, value: string) => {
+    const newPlayers = [...players];
+    newPlayers[index] = value;
+    setPlayers(newPlayers);
+  };
+
+  const removePlayer = (index: number) => {
+    if (players.length > 1) {
+      const newPlayers = players.filter((_, i) => i !== index);
+      setPlayers(newPlayers);
+    }
+  };
+
   const handleSubmit = async () => {
     if (!activeProfile) {
       Alert.alert('Error', 'No active profile selected');
       return;
     }
 
-    if (!players.trim() || !spirits.trim()) {
-      Alert.alert('Error', 'Please enter players and spirits');
-      return;
-    }
-
     const playerList = players
-      .split(',')
       .map((p) => p.trim())
       .filter((p) => p.length > 0);
     const spiritList = spirits
@@ -120,11 +132,29 @@ export default function AddGameScreen() {
 
             <View style={styles.field}>
               <ThemedText style={styles.label}>Players *</ThemedText>
-              <TextInput
-                style={styles.input}
-                placeholder="Enter player names (comma separated)"
-                value={players}
-                onChangeText={setPlayers}
+              {players.map((player, index) => (
+                <View key={index} style={styles.playerInputRow}>
+                  <TextInput
+                    style={[styles.input, styles.playerInput]}
+                    placeholder={`Player ${index + 1}`}
+                    value={player}
+                    onChangeText={(value) => updatePlayer(index, value)}
+                  />
+                  {players.length > 1 && (
+                    <TouchableOpacity
+                      onPress={() => removePlayer(index)}
+                      style={styles.removeButton}
+                    >
+                      <ThemedText style={styles.removeButtonText}>✕</ThemedText>
+                    </TouchableOpacity>
+                  )}
+                </View>
+              ))}
+              <Button
+                title="+ Add Player"
+                onPress={addPlayerInput}
+                variant="outline"
+                style={styles.addButton}
               />
             </View>
 
@@ -288,5 +318,31 @@ const styles = StyleSheet.create({
   submitButton: {
     marginTop: 8,
     marginBottom: 32,
+  },
+  playerInputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  playerInput: {
+    flex: 1,
+    marginBottom: 0,
+  },
+  removeButton: {
+    marginLeft: 8,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#ff4444',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  removeButtonText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  addButton: {
+    marginTop: 4,
   },
 });
