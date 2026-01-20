@@ -8,28 +8,32 @@ import {
   Alert,
   KeyboardAvoidingView,
   Platform,
+  TouchableOpacity,
 } from 'react-native';
 import { router, Stack } from 'expo-router';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { Button } from '@/components/ui/Button';
 import { DatePicker } from '@/components/ui/DatePicker';
+import { Select } from '@/components/ui/Select';
 import { ImagePicker } from '@/components/ImagePicker';
 import { useApp } from '@/contexts/AppContext';
 import { useGames } from '@/hooks/useGames';
+import { SPIRITS } from '@/assets/static/spirits';
+import { ADVERSARIES } from '@/assets/static/adversaries';
+import { SCENARIOS } from '@/assets/static/scenarios';
 
 export default function AddGameScreen() {
   const { activeProfile } = useApp();
   const { createGame } = useGames();
 
   const [date, setDate] = useState(new Date());
-  const [players, setPlayers] = useState('');
-  const [spirits, setSpirits] = useState('');
+  const [players, setPlayers] = useState<string[]>(['']);
+  const [spirits, setSpirits] = useState<Record<string, string>>({});
   const [win, setWin] = useState(false);
   const [adversary, setAdversary] = useState('');
-  const [adversaryDifficulty, setAdversaryDifficulty] = useState('');
+  const [adversaryLevel, setAdversaryLevel] = useState(0);
   const [scenario, setScenario] = useState('');
-  const [scenarioDifficulty, setScenarioDifficulty] = useState('');
   const [invaderCards, setInvaderCards] = useState('');
   const [dahan, setDahan] = useState('');
   const [blight, setBlight] = useState('');
@@ -37,28 +41,89 @@ export default function AddGameScreen() {
   const [images, setImages] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
 
+  const addPlayerInput = () => {
+    setPlayers([...players, '']);
+  };
+
+  const updatePlayer = (index: number, value: string) => {
+    const newPlayers = [...players];
+    newPlayers[index] = value;
+    setPlayers(newPlayers);
+  };
+
+  const removePlayer = (index: number) => {
+    if (players.length > 1) {
+      const playerName = players[index];
+      const newPlayers = players.filter((_, i) => i !== index);
+      setPlayers(newPlayers);
+
+      // Remove spirit selection for this player
+      if (playerName.trim()) {
+        const newSpirits = { ...spirits };
+        delete newSpirits[playerName.trim()];
+        setSpirits(newSpirits);
+      }
+    }
+  };
+
+  const updateSpirit = (playerName: string, spiritName: string) => {
+    setSpirits({ ...spirits, [playerName]: spiritName });
+  };
+
+  const spiritOptions = SPIRITS.map((spirit) => ({
+    label: spirit.name,
+    subtext: spirit.label,
+    value: spirit.label,
+  }));
+
+  const adversaryOptions = ADVERSARIES.map((adv) => ({
+    label: adv.name,
+    subtext: adv.label,
+    value: adv.label,
+  }));
+
+  const selectedAdversary = ADVERSARIES.find((adv) => adv.label === adversary);
+  const adversaryLevelOptions = selectedAdversary
+    ? Object.entries(selectedAdversary.levels).map(([level, data]) => ({
+        label: data.name,
+        subtext: `Level ${level}`,
+        value: level,
+      }))
+    : [];
+
+  const handleAdversaryChange = (adversaryLabel: string) => {
+    setAdversary(adversaryLabel);
+    // Reset difficulty to Base (level 0) when adversary changes
+    setAdversaryLevel(0);
+  };
+
+  const scenarioOptions = SCENARIOS.map((scenario) => ({
+    label: scenario.name,
+    subtext: `Difficulty ${scenario.difficulty}`,
+    value: scenario.name,
+  }));
+
+  const selectedScenario = SCENARIOS.find((s) => s.name === scenario);
+
   const handleSubmit = async () => {
     if (!activeProfile) {
       Alert.alert('Error', 'No active profile selected');
       return;
     }
 
-    if (!players.trim() || !spirits.trim()) {
-      Alert.alert('Error', 'Please enter players and spirits');
-      return;
-    }
-
     const playerList = players
-      .split(',')
       .map((p) => p.trim())
       .filter((p) => p.length > 0);
-    const spiritList = spirits
-      .split(',')
-      .map((s) => s.trim())
-      .filter((s) => s.length > 0);
+
+    const spiritList = playerList.map((playerName) => spirits[playerName] || '').filter((s) => s.length > 0);
 
     if (playerList.length === 0 || spiritList.length === 0) {
       Alert.alert('Error', 'Please enter valid players and spirits');
+      return;
+    }
+
+    if (playerList.length !== spiritList.length) {
+      Alert.alert('Error', 'Please select a spirit for each player');
       return;
     }
 
@@ -71,13 +136,9 @@ export default function AddGameScreen() {
         spirits: spiritList,
         win,
         adversary: adversary.trim() || null,
-        adversaryDifficulty: adversaryDifficulty
-          ? parseInt(adversaryDifficulty, 10)
-          : null,
+        adversaryDifficulty: selectedAdversary ? selectedAdversary.levels[adversaryLevel].difficulty : null,
         scenario: scenario.trim() || null,
-        scenarioDifficulty: scenarioDifficulty
-          ? parseInt(scenarioDifficulty, 10)
-          : null,
+        scenarioDifficulty: selectedScenario ? selectedScenario.difficulty : null,
         invaderCards: parseInt(invaderCards, 10) || 0,
         dahan: parseInt(dahan, 10) || 0,
         blight: parseInt(blight, 10) || 0,
@@ -120,22 +181,54 @@ export default function AddGameScreen() {
 
             <View style={styles.field}>
               <ThemedText style={styles.label}>Players *</ThemedText>
-              <TextInput
-                style={styles.input}
-                placeholder="Enter player names (comma separated)"
-                value={players}
-                onChangeText={setPlayers}
+              {players.map((player, index) => (
+                <View key={index} style={styles.playerInputRow}>
+                  <TextInput
+                    style={[styles.input, styles.playerInput]}
+                    placeholder={`Player ${index + 1}`}
+                    value={player}
+                    onChangeText={(value) => updatePlayer(index, value)}
+                  />
+                  {players.length > 1 && (
+                    <TouchableOpacity
+                      onPress={() => removePlayer(index)}
+                      style={styles.removeButton}
+                    >
+                      <ThemedText style={styles.removeButtonText}>✕</ThemedText>
+                    </TouchableOpacity>
+                  )}
+                </View>
+              ))}
+              <Button
+                title="+ Add Player"
+                onPress={addPlayerInput}
+                variant="outline"
+                style={styles.addButton}
               />
             </View>
 
             <View style={styles.field}>
               <ThemedText style={styles.label}>Spirits *</ThemedText>
-              <TextInput
-                style={styles.input}
-                placeholder="Enter spirit names (comma separated)"
-                value={spirits}
-                onChangeText={setSpirits}
-              />
+              {players.map((player, index) => {
+                const playerName = player.trim();
+                if (!playerName) return null;
+                return (
+                  <View key={index} style={styles.spiritSelectRow}>
+                    <Select
+                      label={playerName}
+                      value={spirits[playerName] || ''}
+                      onChange={(spiritName) => updateSpirit(playerName, spiritName)}
+                      options={spiritOptions}
+                      placeholder="Select a spirit"
+                    />
+                  </View>
+                );
+              })}
+              {players.filter((p) => p.trim()).length === 0 && (
+                <ThemedText style={styles.helperText}>
+                  Add players above to select their spirits
+                </ThemedText>
+              )}
             </View>
 
             <View style={styles.switchField}>
@@ -145,43 +238,33 @@ export default function AddGameScreen() {
 
             <View style={styles.field}>
               <ThemedText style={styles.label}>Adversary</ThemedText>
-              <TextInput
-                style={styles.input}
-                placeholder="Optional"
+              <Select
                 value={adversary}
-                onChangeText={setAdversary}
+                onChange={handleAdversaryChange}
+                options={adversaryOptions}
+                placeholder="Select an adversary (optional)"
               />
             </View>
 
-            <View style={styles.field}>
-              <ThemedText style={styles.label}>Adversary Difficulty</ThemedText>
-              <TextInput
-                style={styles.input}
-                placeholder="0-10"
-                value={adversaryDifficulty}
-                onChangeText={setAdversaryDifficulty}
-                keyboardType="numeric"
-              />
-            </View>
+            {adversary && (
+              <View style={styles.field}>
+                <ThemedText style={styles.label}>Adversary Level</ThemedText>
+                <Select
+                  value={adversaryLevel.toString()}
+                  onChange={(level) => setAdversaryLevel(parseInt(level, 10))}
+                  options={adversaryLevelOptions}
+                  placeholder="Select difficulty level"
+                />
+              </View>
+            )}
 
             <View style={styles.field}>
               <ThemedText style={styles.label}>Scenario</ThemedText>
-              <TextInput
-                style={styles.input}
-                placeholder="Optional"
+              <Select
                 value={scenario}
-                onChangeText={setScenario}
-              />
-            </View>
-
-            <View style={styles.field}>
-              <ThemedText style={styles.label}>Scenario Difficulty</ThemedText>
-              <TextInput
-                style={styles.input}
-                placeholder="0-10"
-                value={scenarioDifficulty}
-                onChangeText={setScenarioDifficulty}
-                keyboardType="numeric"
+                onChange={setScenario}
+                options={scenarioOptions}
+                placeholder="Select a scenario (optional)"
               />
             </View>
 
@@ -288,5 +371,39 @@ const styles = StyleSheet.create({
   submitButton: {
     marginTop: 8,
     marginBottom: 32,
+  },
+  playerInputRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
+  },
+  playerInput: {
+    flex: 1,
+    marginBottom: 0,
+  },
+  removeButton: {
+    marginLeft: 8,
+    width: 32,
+    height: 32,
+    borderRadius: 16,
+    backgroundColor: '#ff4444',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  removeButtonText: {
+    color: '#fff',
+    fontSize: 18,
+    fontWeight: 'bold',
+  },
+  addButton: {
+    marginTop: 4,
+  },
+  spiritSelectRow: {
+    marginBottom: 16,
+  },
+  helperText: {
+    fontSize: 14,
+    color: '#999',
+    fontStyle: 'italic',
   },
 });
