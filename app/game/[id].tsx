@@ -5,8 +5,9 @@ import {
   StyleSheet,
   Image,
   TouchableOpacity,
+  Alert,
 } from 'react-native';
-import { useLocalSearchParams, Stack } from 'expo-router';
+import { useLocalSearchParams, Stack, router } from 'expo-router';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { useGames } from '@/hooks/useGames';
@@ -16,7 +17,7 @@ type TabType = 'game' | 'stats';
 
 export default function GameDetailsScreen() {
   const { id, tab } = useLocalSearchParams<{ id: string; tab?: string }>();
-  const { getGameById } = useGames();
+  const { getGameById, deleteGame } = useGames();
   const [game, setGame] = useState<GameWithScore | null>(null);
   const [activeTab, setActiveTab] = useState<TabType>(
     (tab as TabType) || 'game'
@@ -43,6 +44,29 @@ export default function GameDetailsScreen() {
       month: 'long',
       day: 'numeric',
     });
+  };
+
+  const handleDelete = () => {
+    Alert.alert(
+      'Delete Game',
+      'Are you sure you want to delete this game? This action cannot be undone.',
+      [
+        {
+          text: 'Cancel',
+          style: 'cancel',
+        },
+        {
+          text: 'Delete',
+          style: 'destructive',
+          onPress: async () => {
+            if (id) {
+              await deleteGame(parseInt(id, 10));
+              router.back();
+            }
+          },
+        },
+      ]
+    );
   };
 
   if (loading) {
@@ -203,6 +227,24 @@ export default function GameDetailsScreen() {
                   </ScrollView>
                 </View>
               )}
+
+              <TouchableOpacity
+                style={styles.editButton}
+                onPress={() => router.push(`/add-game?id=${id}`)}
+              >
+                <ThemedText style={styles.editButtonText}>
+                  Edit Game
+                </ThemedText>
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={styles.deleteButton}
+                onPress={handleDelete}
+              >
+                <ThemedText style={styles.deleteButtonText}>
+                  Delete Game
+                </ThemedText>
+              </TouchableOpacity>
             </View>
           ) : (
             <View style={styles.content}>
@@ -339,5 +381,32 @@ const styles = StyleSheet.create({
     marginTop: 48,
     fontSize: 16,
     color: '#FF3B30',
+  },
+  editButton: {
+    backgroundColor: 'transparent',
+    borderWidth: 2,
+    borderColor: '#007AFF',
+    borderRadius: 8,
+    padding: 16,
+    alignItems: 'center',
+    marginTop: 16,
+  },
+  editButtonText: {
+    color: '#007AFF',
+    fontSize: 16,
+    fontWeight: '600',
+  },
+  deleteButton: {
+    backgroundColor: '#FF3B30',
+    borderRadius: 8,
+    padding: 16,
+    alignItems: 'center',
+    marginTop: 16,
+    marginBottom: 32,
+  },
+  deleteButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });
