@@ -97,6 +97,11 @@ export default function AddGameScreen() {
     setAdversaryLevel(0);
   };
 
+  const clearAdversary = () => {
+    setAdversary('');
+    setAdversaryLevel(0);
+  };
+
   const scenarioOptions = SCENARIOS.map((scenario) => ({
     label: scenario.name,
     subtext: `Difficulty ${scenario.difficulty}`,
@@ -104,6 +109,8 @@ export default function AddGameScreen() {
   }));
 
   const selectedScenario = SCENARIOS.find((s) => s.name === scenario);
+
+  const clearScenario = () => setScenario("")
 
   const handleSubmit = async () => {
     if (!activeProfile) {
@@ -238,12 +245,24 @@ export default function AddGameScreen() {
 
             <View style={styles.field}>
               <ThemedText style={styles.label}>Adversary</ThemedText>
-              <Select
-                value={adversary}
-                onChange={handleAdversaryChange}
-                options={adversaryOptions}
-                placeholder="Select an adversary (optional)"
-              />
+              <View style={styles.adversaryRow}>
+                <View style={styles.adversarySelect}>
+                  <Select
+                    value={adversary}
+                    onChange={handleAdversaryChange}
+                    options={adversaryOptions}
+                    placeholder="Select an adversary (optional)"
+                  />
+                </View>
+                  {adversary && (
+                    <TouchableOpacity
+                      onPress={clearAdversary}
+                      style={styles.removeButton}
+                    >
+                      <ThemedText style={styles.removeButtonText}>✕</ThemedText>
+                    </TouchableOpacity>
+                  )}
+              </View>
             </View>
 
             {adversary && (
@@ -260,12 +279,24 @@ export default function AddGameScreen() {
 
             <View style={styles.field}>
               <ThemedText style={styles.label}>Scenario</ThemedText>
-              <Select
-                value={scenario}
-                onChange={setScenario}
-                options={scenarioOptions}
-                placeholder="Select a scenario (optional)"
-              />
+              <View style={styles.adversaryRow}>
+                <View style={styles.adversarySelect}>
+                  <Select
+                    value={scenario}
+                    onChange={setScenario}
+                    options={scenarioOptions}
+                    placeholder="Select a scenario (optional)"
+                  />
+                </View>
+                {scenario && (
+                  <TouchableOpacity
+                    onPress={clearScenario}
+                    style={styles.removeButton}
+                  >
+                    <ThemedText style={styles.removeButtonText}>✕</ThemedText>
+                  </TouchableOpacity>
+                )}
+              </View>
             </View>
 
             <View style={styles.field}>
@@ -405,5 +436,13 @@ const styles = StyleSheet.create({
     fontSize: 14,
     color: '#999',
     fontStyle: 'italic',
+  },
+  adversaryRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  adversarySelect: {
+    flex: 1,
   },
 });
