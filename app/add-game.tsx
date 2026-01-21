@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View,
   TextInput,
@@ -9,8 +9,9 @@ import {
   KeyboardAvoidingView,
   Platform,
   TouchableOpacity,
+  ActivityIndicator,
 } from 'react-native';
-import { router, Stack } from 'expo-router';
+import { router, Stack, useLocalSearchParams } from 'expo-router';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { Button } from '@/components/ui/Button';
@@ -25,7 +26,8 @@ import { SCENARIOS } from '@/assets/static/scenarios';
 
 export default function AddGameScreen() {
   const { activeProfile } = useApp();
-  const { createGame } = useGames();
+  const { createGame, updateGame, getGameById } = useGames();
+  const { id } = useLocalSearchParams<{ id?: string }>();
 
   const [date, setDate] = useState(new Date());
   const [players, setPlayers] = useState<string[]>(['']);
@@ -40,6 +42,10 @@ export default function AddGameScreen() {
   const [notes, setNotes] = useState('');
   const [images, setImages] = useState<string[]>([]);
   const [loading, setLoading] = useState(false);
+  const [isEditMode, setIsEditMode] = useState(false);
+  const [gameId, setGameId] = useState<number | null>(null);
+  const [initialLoading, setInitialLoading] = useState(false);
+  const [existingProfileId, setExistingProfileId] = useState<number | null>(null);
 
   const addPlayerInput = () => {
     setPlayers([...players, '']);
@@ -112,6 +118,96 @@ export default function AddGameScreen() {
 
   const clearScenario = () => setScenario("")
 
+  useEffect(() => {
+    if (id) {
+      loadExistingGame(parseInt(id, 10));
+    }
+  }, [id]);
+
+  const loadExistingGame = async (gameIdToLoad: number) => {
+    setInitialLoading(true);
+    try {
+      const game = await getGameById(gameIdToLoad);
+
+      if (!game) {
+        Alert.alert('Error', 'Game not found');
+        router.back();
+        return;
+      }
+
+      // Load all game data into form state
+      setDate(new Date(game.date));
+      setPlayers(game.players);
+
+      // Map spirits to players
+      const spiritsMap = game.players.reduce((acc, player, idx) => ({
+        ...acc,
+        [player]: game.spirits[idx] || '',
+      }), {});
+      setSpirits(spiritsMap);
+
+      setWin(game.win);
+
+      // Set adversary if present
+      if (game.adversary) {
+        // Try exact match first
+        let adversaryData = ADVERSARIES.find(adv => adv.label === game.adversary);
+
+        // If not found, try case-insensitive match
+        if (!adversaryData) {
+          adversaryData = ADVERSARIES.find(
+            adv => adv.label.toLowerCase() === game.adversary.toLowerCase()
+          );
+          if (adversaryData) {
+            // Use the correct label from the static file
+            setAdversary(adversaryData.label);
+          } else {
+            setAdversary('');
+            setAdversaryLevel(0);
+            return;
+          }
+        } else {
+          setAdversary(game.adversary);
+        }
+
+        // Reverse lookup adversary level from difficulty
+        if (game.adversaryDifficulty !== null && adversaryData) {
+          const levelEntry = Object.entries(adversaryData.levels).find(
+            ([_, data]) => data.difficulty === game.adversaryDifficulty
+          );
+
+          if (levelEntry) {
+            const level = parseInt(levelEntry[0], 10);
+            setAdversaryLevel(level);
+          } else {
+            setAdversaryLevel(0);
+          }
+        }
+      } else {
+        setAdversary('');
+        setAdversaryLevel(0);
+      }
+
+      setScenario(game.scenario || '');
+      setInvaderCards(game.invaderCards.toString());
+      setDahan(game.dahan.toString());
+      setBlight(game.blight.toString());
+      setNotes(game.notes || '');
+      setImages(game.pictures || []);
+
+      // Store edit mode info
+      setIsEditMode(true);
+      setGameId(game.id);
+      setExistingProfileId(game.profileId);
+    } catch (error) {
+      console.error('Error loading game:', error);
+      Alert.alert('Error', 'Failed to load game data');
+      router.back();
+    } finally {
+      setInitialLoading(false);
+    }
+  };
+
   const handleSubmit = async () => {
     if (!activeProfile) {
       Alert.alert('Error', 'No active profile selected');
@@ -136,22 +232,46 @@ export default function AddGameScreen() {
 
     setLoading(true);
     try {
-      const game = await createGame({
-        profileId: activeProfile.id,
-        date: date.toISOString(),
-        players: playerList,
-        spirits: spiritList,
-        win,
-        adversary: adversary.trim() || null,
-        adversaryDifficulty: selectedAdversary ? selectedAdversary.levels[adversaryLevel].difficulty : null,
-        scenario: scenario.trim() || null,
-        scenarioDifficulty: selectedScenario ? selectedScenario.difficulty : null,
-        invaderCards: parseInt(invaderCards, 10) || 0,
-        dahan: parseInt(dahan, 10) || 0,
-        blight: parseInt(blight, 10) || 0,
-        notes: notes.trim(),
-        pictures: images,
-      });
+      let game;
+
+      if (isEditMode && gameId) {
+        // Update existing game
+        game = await updateGame({
+          id: gameId,
+          profileId: existingProfileId!, // Use existing profile, don't change
+          date: date.toISOString(),
+          players: playerList,
+          spirits: spiritList,
+          win,
+          adversary: adversary.trim() || null,
+          adversaryDifficulty: selectedAdversary ? selectedAdversary.levels[adversaryLevel].difficulty : null,
+          scenario: scenario.trim() || null,
+          scenarioDifficulty: selectedScenario ? selectedScenario.difficulty : null,
+          invaderCards: parseInt(invaderCards, 10) || 0,
+          dahan: parseInt(dahan, 10) || 0,
+          blight: parseInt(blight, 10) || 0,
+          notes: notes.trim(),
+          pictures: images,
+        });
+      } else {
+        // Create new game
+        game = await createGame({
+          profileId: activeProfile.id,
+          date: date.toISOString(),
+          players: playerList,
+          spirits: spiritList,
+          win,
+          adversary: adversary.trim() || null,
+          adversaryDifficulty: selectedAdversary ? selectedAdversary.levels[adversaryLevel].difficulty : null,
+          scenario: scenario.trim() || null,
+          scenarioDifficulty: selectedScenario ? selectedScenario.difficulty : null,
+          invaderCards: parseInt(invaderCards, 10) || 0,
+          dahan: parseInt(dahan, 10) || 0,
+          blight: parseInt(blight, 10) || 0,
+          notes: notes.trim(),
+          pictures: images,
+        });
+      }
 
       if (game) {
         router.replace(`/game/${game.id}?tab=stats`);
@@ -159,7 +279,7 @@ export default function AddGameScreen() {
         Alert.alert('Error', 'Failed to save game. Please try again.');
       }
     } catch (error) {
-      console.error('Error creating game:', error);
+      console.error('Error saving game:', error);
       Alert.alert('Error', 'Failed to save game. Please try again.');
     } finally {
       setLoading(false);
@@ -170,16 +290,22 @@ export default function AddGameScreen() {
     <>
       <Stack.Screen
         options={{
-          title: 'Add Game',
+          title: isEditMode ? 'Edit Game' : 'Add Game',
           presentation: 'modal',
         }}
       />
       <ThemedView style={styles.container}>
-        <KeyboardAvoidingView
-          behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
-          style={styles.keyboardView}
-        >
-          <ScrollView
+        {initialLoading ? (
+          <View style={styles.loadingContainer}>
+            <ActivityIndicator size="large" color="#007AFF" />
+            <ThemedText style={styles.loadingText}>Loading game data...</ThemedText>
+          </View>
+        ) : (
+          <KeyboardAvoidingView
+            behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+            style={styles.keyboardView}
+          >
+            <ScrollView
             style={styles.scrollView}
             contentContainerStyle={styles.scrollContent}
             keyboardShouldPersistTaps="handled"
@@ -348,13 +474,14 @@ export default function AddGameScreen() {
             <ImagePicker images={images} onImagesChange={setImages} />
 
             <Button
-              title="Save Game"
+              title={isEditMode ? 'Update Game' : 'Save Game'}
               onPress={handleSubmit}
               loading={loading}
               style={styles.submitButton}
             />
-          </ScrollView>
-        </KeyboardAvoidingView>
+            </ScrollView>
+          </KeyboardAvoidingView>
+        )}
       </ThemedView>
     </>
   );
@@ -363,6 +490,17 @@ export default function AddGameScreen() {
 const styles = StyleSheet.create({
   container: {
     flex: 1,
+  },
+  loadingContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 32,
+  },
+  loadingText: {
+    marginTop: 16,
+    fontSize: 16,
+    color: '#666',
   },
   keyboardView: {
     flex: 1,

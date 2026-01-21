@@ -229,6 +229,15 @@ export default function GameDetailsScreen() {
               )}
 
               <TouchableOpacity
+                style={styles.editButton}
+                onPress={() => router.push(`/add-game?id=${id}`)}
+              >
+                <ThemedText style={styles.editButtonText}>
+                  Edit Game
+                </ThemedText>
+              </TouchableOpacity>
+
+              <TouchableOpacity
                 style={styles.deleteButton}
                 onPress={handleDelete}
               >
@@ -372,6 +381,20 @@ const styles = StyleSheet.create({
     marginTop: 48,
     fontSize: 16,
     color: '#FF3B30',
+  },
+  editButton: {
+    backgroundColor: 'transparent',
+    borderWidth: 2,
+    borderColor: '#007AFF',
+    borderRadius: 8,
+    padding: 16,
+    alignItems: 'center',
+    marginTop: 16,
+  },
+  editButtonText: {
+    color: '#007AFF',
+    fontSize: 16,
+    fontWeight: '600',
   },
   deleteButton: {
     backgroundColor: '#FF3B30',
