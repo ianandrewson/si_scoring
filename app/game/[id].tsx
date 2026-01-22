@@ -12,6 +12,7 @@ import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { useGames } from '@/hooks/useGames';
 import { GameWithScore } from '@/types';
+import { GameStats } from '@/components/stats/GameStats';
 
 type TabType = 'game' | 'stats';
 
@@ -247,18 +248,7 @@ export default function GameDetailsScreen() {
               </TouchableOpacity>
             </View>
           ) : (
-            <View style={styles.content}>
-              <View style={styles.statsCard}>
-                <ThemedText style={styles.scoreLabel}>Final Score</ThemedText>
-                <ThemedText style={styles.scoreValue}>{game.score}</ThemedText>
-              </View>
-
-              <View style={styles.section}>
-                <ThemedText style={styles.infoText}>
-                  Additional stats will go here
-                </ThemedText>
-              </View>
-            </View>
+            <GameStats game={game} />
           )}
         </ScrollView>
       </ThemedView>
