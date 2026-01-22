@@ -181,7 +181,7 @@ export const GameStats = ({ game }: GameStatsProps) => {
 
           {stats.sameSpiritsRecord && (
             <WinLossRecord
-              title="With Same Spirits"
+              title="With Same Spirits (Any Difficulty)"
               wins={stats.sameSpiritsRecord.wins}
               losses={stats.sameSpiritsRecord.losses}
               subtitle={game.spirits.join(', ')}
@@ -190,7 +190,7 @@ export const GameStats = ({ game }: GameStatsProps) => {
 
           {stats.sameSpiritsAndAdversaryRecord && game.adversary && (
             <WinLossRecord
-              title={`Same Spirits vs ${game.adversary}`}
+              title={`Same Spirits vs ${game.adversary} (Any Difficulty)`}
               wins={stats.sameSpiritsAndAdversaryRecord.wins}
               losses={stats.sameSpiritsAndAdversaryRecord.losses}
             />

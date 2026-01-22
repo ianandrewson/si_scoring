@@ -109,6 +109,7 @@ export const getDahanStats = (
 
 /**
  * Gets win/loss record against the same adversary at the same difficulty.
+ * Includes the current game in the record.
  */
 export const getSameAdversaryDifficultyRecord = (
   currentGame: GameWithScore,
@@ -117,20 +118,22 @@ export const getSameAdversaryDifficultyRecord = (
   if (!currentGame.adversary) return null;
 
   const matchingGames = allGames.filter(
-    g => g.adversary === currentGame.adversary &&
-         g.adversaryDifficulty === currentGame.adversaryDifficulty
+    g => getTotalDifficulty(g) === getTotalDifficulty(currentGame)
   );
 
   if (matchingGames.length === 0) return null;
 
-  const wins = matchingGames.filter(g => g.win).length;
-  const losses = matchingGames.length - wins;
+  // Include current game in the record
+  const allMatchingGames = [...matchingGames, currentGame];
+  const wins = allMatchingGames.filter(g => g.win).length;
+  const losses = allMatchingGames.length - wins;
 
   return { wins, losses };
 };
 
 /**
  * Gets win/loss record against the same adversary (any difficulty).
+ * Includes the current game in the record.
  */
 export const getSameAdversaryRecord = (
   currentGame: GameWithScore,
@@ -138,7 +141,7 @@ export const getSameAdversaryRecord = (
 ): { wins: number; losses: number } | null => {
   if (!currentGame.adversary) return null;
 
-  const matchingGames = allGames.filter(
+  const matchingGames = [...allGames, currentGame].filter(
     g => g.adversary === currentGame.adversary
   );
 
@@ -152,12 +155,13 @@ export const getSameAdversaryRecord = (
 
 /**
  * Gets win/loss record with the same spirit combination (order-agnostic).
+ * Includes the current game in the record.
  */
 export const getSameSpiritsRecord = (
   currentGame: GameWithScore,
   allGames: GameWithScore[]
 ): { wins: number; losses: number } | null => {
-  const matchingGames = allGames.filter(
+  const matchingGames = [...allGames, currentGame].filter(
     g => areSpiritsSame(g.spirits, currentGame.spirits)
   );
 
@@ -171,6 +175,7 @@ export const getSameSpiritsRecord = (
 
 /**
  * Gets win/loss record with the same spirits vs the same adversary (any difficulty).
+ * Includes the current game in the record.
  */
 export const getSameSpiritsAndAdversaryRecord = (
   currentGame: GameWithScore,
@@ -178,9 +183,9 @@ export const getSameSpiritsAndAdversaryRecord = (
 ): { wins: number; losses: number } | null => {
   if (!currentGame.adversary) return null;
 
-  const matchingGames = allGames.filter(
+  const matchingGames = [...allGames, currentGame].filter(
     g => g.adversary === currentGame.adversary &&
-         areSpiritsSame(g.spirits, currentGame.spirits)
+        areSpiritsSame(g.spirits, currentGame.spirits)
   );
 
   if (matchingGames.length === 0) return null;
@@ -193,6 +198,7 @@ export const getSameSpiritsAndAdversaryRecord = (
 
 /**
  * Gets score statistics for the same spirit combo at the same total difficulty.
+ * Includes the current game in the statistics.
  * @returns High/low/average scores for the spirit combo
  */
 export const getSpiritComboScoreStats = (
@@ -201,14 +207,15 @@ export const getSpiritComboScoreStats = (
 ): { high: number; low: number; average: number } | null => {
   const difficulty = getTotalDifficulty(currentGame);
 
-  const matchingGames = allGames.filter(
+  const matchingGames = [...allGames, currentGame].filter(
     g => areSpiritsSame(g.spirits, currentGame.spirits) &&
          getTotalDifficulty(g) === difficulty
   );
 
   if (matchingGames.length === 0) return null;
 
-  const scores = matchingGames.map(g => g.score);
+  // Include current game in the statistics
+  const scores = [...matchingGames.map(g => g.score)];
   const high = Math.max(...scores);
   const low = Math.min(...scores);
   const average = Math.round(scores.reduce((sum, score) => sum + score, 0) / scores.length);
