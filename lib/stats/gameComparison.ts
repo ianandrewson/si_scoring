@@ -4,7 +4,7 @@
  */
 
 import { GameWithScore } from '@/types';
-import { areSpiritsSame, getSpiritComboKey } from './spiritComparison';
+import { areSpiritsSame } from './spiritComparison';
 
 /**
  * Calculates the total difficulty of a game (adversary + scenario).
@@ -209,7 +209,7 @@ export const getSpiritComboScoreStats = (
 
   const matchingGames = [...allGames, currentGame].filter(
     g => areSpiritsSame(g.spirits, currentGame.spirits) &&
-         getTotalDifficulty(g) === difficulty
+        getTotalDifficulty(g) === difficulty
   );
 
   if (matchingGames.length === 0) return null;
