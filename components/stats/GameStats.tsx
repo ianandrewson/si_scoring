@@ -136,7 +136,7 @@ export const GameStats = ({ game }: GameStatsProps) => {
           <ThemedText style={styles.sectionTitle}>Game State</ThemedText>
           {stats.blightStats && (
             <RangeScale
-              title="Blight on Island"
+              title="Blight on Island Per Player"
               min={stats.blightStats.min}
               max={stats.blightStats.max}
               current={stats.blightStats.current}
@@ -145,7 +145,7 @@ export const GameStats = ({ game }: GameStatsProps) => {
           )}
           {stats.dahanStats && (
             <RangeScale
-              title="Dahan Remaining"
+              title="Dahan Remaining Per Player"
               min={stats.dahanStats.min}
               max={stats.dahanStats.max}
               current={stats.dahanStats.current}
@@ -220,18 +220,19 @@ const styles = StyleSheet.create({
   scoreCard: {
     backgroundColor: '#007AFF',
     borderRadius: 16,
-    padding: 24,
-    alignItems: 'center',
+    padding: 8,
+    alignItems: "center",
     marginBottom: 24,
   },
   scoreLabel: {
     fontSize: 18,
+    paddingBottom: 8,
     color: '#fff',
     opacity: 0.9,
-    marginBottom: 8,
   },
   scoreValue: {
     fontSize: 48,
+    paddingTop: 24,
     fontWeight: 'bold',
     color: '#fff',
   },

@@ -15,13 +15,18 @@ interface RangeScaleProps {
 }
 
 export const RangeScale = React.memo(({ title, min, max, current, lowIsGood }: RangeScaleProps) => {
+  // Format number to show decimals only when needed
+  const formatNumber = (value: number): string => {
+    return Number.isInteger(value) ? value.toString() : value.toFixed(1);
+  };
+
   // Handle case where all values are the same
   if (min === max) {
     return (
       <View style={styles.card}>
         <ThemedText style={styles.title}>{title}</ThemedText>
         <View style={styles.singleValueContainer}>
-          <ThemedText style={styles.singleValueText}>All games: {current}</ThemedText>
+          <ThemedText style={styles.singleValueText}>All games: {formatNumber(current)}</ThemedText>
         </View>
       </View>
     );
@@ -64,11 +69,11 @@ export const RangeScale = React.memo(({ title, min, max, current, lowIsGood }: R
       </View>
 
       <View style={styles.labelsContainer}>
-        <ThemedText style={styles.label}>Min: {min}</ThemedText>
+        <ThemedText style={styles.label}>Min: {formatNumber(min)}</ThemedText>
         <ThemedText style={[styles.label, styles.currentLabel, { color }]}>
-          Current: {current}
+          Current: {formatNumber(current)}
         </ThemedText>
-        <ThemedText style={styles.label}>Max: {max}</ThemedText>
+        <ThemedText style={styles.label}>Max: {formatNumber(max)}</ThemedText>
       </View>
     </View>
   );

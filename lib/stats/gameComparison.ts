@@ -60,7 +60,7 @@ export const getSameDifficultyRank = (
 };
 
 /**
- * Gets blight statistics (min, max, current).
+ * Gets blight statistics (min, max, current), normalized by player count.
  */
 export const getBlightStats = (
   currentGame: GameWithScore,
@@ -68,10 +68,13 @@ export const getBlightStats = (
 ): { min: number; max: number; current: number; percentage: number } | null => {
   if (allGames.length === 0) return null;
 
-  const blightValues = allGames.map(g => g.blight);
-  const min = Math.min(...blightValues);
-  const max = Math.max(...blightValues);
-  const current = currentGame.blight;
+  // Normalize blight by player count
+  const blightValues = allGames.map(g => g.blight / g.players.length);
+  let min = Math.min(...blightValues);
+  let max = Math.max(...blightValues);
+  const current = currentGame.blight / currentGame.players.length;
+  if (current < min) min = current
+  if (current > max) max = current
 
   const percentage = max > min
     ? ((current - min) / (max - min)) * 100
@@ -81,7 +84,7 @@ export const getBlightStats = (
 };
 
 /**
- * Gets dahan statistics (min, max, current).
+ * Gets dahan statistics (min, max, current), normalized by player count.
  */
 export const getDahanStats = (
   currentGame: GameWithScore,
@@ -89,10 +92,13 @@ export const getDahanStats = (
 ): { min: number; max: number; current: number; percentage: number } | null => {
   if (allGames.length === 0) return null;
 
-  const dahanValues = allGames.map(g => g.dahan);
-  const min = Math.min(...dahanValues);
-  const max = Math.max(...dahanValues);
-  const current = currentGame.dahan;
+  // Normalize dahan by player count
+  const dahanValues = allGames.map(g => g.dahan / g.players.length);
+  let min = Math.min(...dahanValues);
+  let max = Math.max(...dahanValues);
+  const current = currentGame.dahan / currentGame.players.length;
+  if (current < min) min = current
+  if (current > max) max = current
 
   const percentage = max > min
     ? ((current - min) / (max - min)) * 100
