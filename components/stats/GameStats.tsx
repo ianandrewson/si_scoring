@@ -23,6 +23,8 @@ import {
   getSameSpiritsRecord,
   getSameSpiritsAndAdversaryRecord,
   getSpiritComboScoreStats,
+  getOverallScoreRange,
+  getSameDifficultyScoreRange,
 } from '@/lib/stats/gameComparison';
 
 interface GameStatsProps {
@@ -57,6 +59,8 @@ export const GameStats = ({ game }: GameStatsProps) => {
       sameSpiritsRecord: getSameSpiritsRecord(game, comparisonGames),
       sameSpiritsAndAdversaryRecord: getSameSpiritsAndAdversaryRecord(game, comparisonGames),
       spiritComboScoreStats: getSpiritComboScoreStats(game, comparisonGames),
+      overallScoreRange: getOverallScoreRange(game, comparisonGames),
+      difficultyScoreRange: getSameDifficultyScoreRange(game, comparisonGames),
     };
   }, [game, comparisonGames]);
 
@@ -119,14 +123,27 @@ export const GameStats = ({ game }: GameStatsProps) => {
       </View>
 
       {/* Score Context Section */}
-      {stats.highestScore && (
+      {(stats.overallScoreRange || stats.difficultyScoreRange) && (
         <View style={styles.section}>
           <ThemedText style={styles.sectionTitle}>Score Context</ThemedText>
-          <StatCard
-            title="Highest Score"
-            value={stats.highestScore.score.toString()}
-            subtitle={`Spirits: ${stats.highestScore.spirits.join(', ')}`}
-          />
+          {stats.overallScoreRange && (
+            <RangeScale
+              title="Overall Score Range"
+              min={stats.overallScoreRange.min}
+              max={stats.overallScoreRange.max}
+              current={stats.overallScoreRange.current}
+              lowIsGood={false}
+            />
+          )}
+          {stats.difficultyScoreRange && (
+            <RangeScale
+              title={`Score Range at Difficulty ${stats.difficultyScoreRange.difficulty}`}
+              min={stats.difficultyScoreRange.min}
+              max={stats.difficultyScoreRange.max}
+              current={stats.difficultyScoreRange.current}
+              lowIsGood={false}
+            />
+          )}
         </View>
       )}
 

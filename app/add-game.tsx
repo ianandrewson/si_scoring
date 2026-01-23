@@ -156,7 +156,7 @@ export default function AddGameScreen() {
         // If not found, try case-insensitive match
         if (!adversaryData) {
           adversaryData = ADVERSARIES.find(
-            adv => adv.label.toLowerCase() === game.adversary.toLowerCase()
+            adv => adv.label.toLowerCase() === game.adversary?.toLowerCase()
           );
           if (adversaryData) {
             // Use the correct label from the static file

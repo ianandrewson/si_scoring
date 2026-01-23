@@ -222,3 +222,56 @@ export const getSpiritComboScoreStats = (
 
   return { high, low, average };
 };
+
+/**
+ * Gets overall score range (min, max, current) across all games.
+ */
+export const getOverallScoreRange = (
+  currentGame: GameWithScore,
+  allGames: GameWithScore[]
+): { min: number; max: number; current: number; percentage: number } | null => {
+  if (allGames.length === 0) return null;
+
+  const scores = allGames.map(g => g.score);
+  let min = Math.min(...scores);
+  let max = Math.max(...scores);
+  const current = currentGame.score;
+
+  if (current < min) min = current;
+  if (current > max) max = current;
+
+  const percentage = max > min
+    ? ((current - min) / (max - min)) * 100
+    : 50;
+
+  return { min, max, current, percentage };
+};
+
+/**
+ * Gets score range at the same total difficulty as the current game.
+ */
+export const getSameDifficultyScoreRange = (
+  currentGame: GameWithScore,
+  allGames: GameWithScore[]
+): { min: number; max: number; current: number; percentage: number; difficulty: number } | null => {
+  const difficulty = getTotalDifficulty(currentGame);
+  const sameDifficultyGames = allGames.filter(
+    g => getTotalDifficulty(g) === difficulty
+  );
+
+  if (sameDifficultyGames.length === 0) return null;
+
+  const scores = sameDifficultyGames.map(g => g.score);
+  let min = Math.min(...scores);
+  let max = Math.max(...scores);
+  const current = currentGame.score;
+
+  if (current < min) min = current;
+  if (current > max) max = current;
+
+  const percentage = max > min
+    ? ((current - min) / (max - min)) * 100
+    : 50;
+
+  return { min, max, current, percentage, difficulty };
+};
