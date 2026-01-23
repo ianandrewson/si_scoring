@@ -88,7 +88,9 @@ export default function GameDetailsScreen() {
 
   return (
     <>
-      <Stack.Screen options={{ title: 'Game Details' }} />
+      <Stack.Screen options={{ title: 'Game Details', headerBackTitle: "Games" }} 
+      
+      />
       <ThemedView style={styles.container}>
         <View style={styles.tabBar}>
           <TouchableOpacity
